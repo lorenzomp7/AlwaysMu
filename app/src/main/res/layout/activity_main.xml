@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/intro"
+            android:textSize="15sp" />
+
+        <!-- App musicale -->
+        <TextView
+            style="@style/SectionTitle"
+            android:text="@string/section_app" />
+
+        <RadioGroup
+            android:id="@+id/appGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Volume -->
+        <TextView
+            style="@style/SectionTitle"
+            android:text="@string/section_volume" />
+
+        <TextView
+            android:id="@+id/volumeLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp" />
+
+        <SeekBar
+            android:id="@+id/volumeBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="12dp" />
+
+        <CheckBox
+            android:id="@+id/enforceVolume"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/enforce_volume" />
+
+        <Button
+            android:id="@+id/applyVolumeButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/apply_volume" />
+
+        <!-- Permessi -->
+        <TextView
+            style="@style/SectionTitle"
+            android:text="@string/section_permissions" />
+
+        <Button
+            android:id="@+id/notifAccessButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/overlayButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/batteryButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <CheckBox
+            android:id="@+id/keepAwake"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/keep_awake" />
+
+        <!-- Servizio -->
+        <TextView
+            style="@style/SectionTitle"
+            android:text="@string/section_service" />
+
+        <Button
+            android:id="@+id/toggleButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="17sp" />
+
+        <Button
+            android:id="@+id/checkNowButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/check_now" />
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textSize="14sp" />
+    </LinearLayout>
+</ScrollView>

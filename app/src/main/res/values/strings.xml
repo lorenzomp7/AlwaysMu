@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">AlwaysMu</string>
+    <string name="intro">Ogni 30 secondi AlwaysMu controlla che ci sia musica in riproduzione. Se non c\'è, apre l\'app scelta, preme play e imposta il volume.</string>
+
+    <string name="section_app">App musicale</string>
+    <string name="not_installed">%1$s (non installata)</string>
+
+    <string name="section_volume">Volume</string>
+    <string name="volume_label">Volume musica: %1$d%%</string>
+    <string name="enforce_volume">Mantieni questo volume ad ogni controllo (altrimenti viene impostato solo quando AlwaysMu avvia la musica)</string>
+    <string name="apply_volume">Applica volume ora</string>
+    <string name="volume_applied">Volume impostato al %1$d%%</string>
+    <string name="volume_failed">Impossibile cambiare il volume (modalità Non disturbare?)</string>
+
+    <string name="section_permissions">Permessi</string>
+    <string name="perm_notif_access">Concedi accesso alle notifiche (consigliato: serve per premere play)</string>
+    <string name="perm_notif_access_ok">✓ Accesso alle notifiche concesso</string>
+    <string name="perm_overlay">Concedi \"Mostra sopra altre app\" (serve per aprire l\'app musicale)</string>
+    <string name="perm_overlay_ok">✓ \"Mostra sopra altre app\" concesso</string>
+    <string name="perm_battery">Disattiva ottimizzazione batteria (evita che Android fermi il servizio)</string>
+    <string name="perm_battery_ok">✓ Ottimizzazione batteria disattivata</string>
+    <string name="keep_awake">Controlla anche a schermo spento (consuma più batteria)</string>
+
+    <string name="section_service">Servizio</string>
+    <string name="start_service">Avvia controllo</string>
+    <string name="stop_service">Ferma controllo</string>
+    <string name="check_now">Controlla ora</string>
+    <string name="status_running">● Attivo\n%1$s</string>
+    <string name="status_stopped">○ Fermo\n%1$s</string>
+    <string name="no_status">Nessun controllo ancora eseguito</string>
+
+    <string name="channel_name">Controllo musica</string>
+    <string name="notif_starting">Avvio controllo…</string>
+    <string name="notif_title">AlwaysMu · %1$s · volume %2$d%%</string>
+    <string name="stop">Ferma</string>
+</resources>
