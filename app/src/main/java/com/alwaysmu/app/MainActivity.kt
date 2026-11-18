@@ -86,6 +86,9 @@ class MainActivity : AppCompatActivity() {
             openSettings(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
         }
         batteryButton.setOnClickListener { requestIgnoreBatteryOptimizations() }
+        findViewById<Button>(R.id.appInfoButton).setOnClickListener {
+            openSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+        }
 
         askNotificationPermission()
     }

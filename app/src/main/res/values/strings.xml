@@ -13,6 +13,8 @@
     <string name="volume_failed">Impossibile cambiare il volume (modalità Non disturbare?)</string>
 
     <string name="section_permissions">Permessi</string>
+    <string name="restricted_hint">Se Android dice \"Impostazione con limitazioni\" o \"App was denied access\": apri Info app → tocca ⋮ in alto a destra → \"Consenti impostazioni con limitazioni\", poi attiva i permessi qui sotto.</string>
+    <string name="open_app_info">Apri Info app (per sbloccare i permessi)</string>
     <string name="perm_notif_access">Concedi accesso alle notifiche (consigliato: serve per premere play)</string>
     <string name="perm_notif_access_ok">✓ Accesso alle notifiche concesso</string>
     <string name="perm_overlay">Concedi \"Mostra sopra altre app\" (serve per aprire l\'app musicale)</string>

@@ -68,3 +68,9 @@ l'APK viene compilato e pubblicato nella pagina **Releases** della repo
 
 Gli APK sono firmati sempre con la stessa chiave (`app/debug.keystore`, chiave di debug
 non segreta), quindi una nuova versione si installa sopra la precedente.
+
+## "App was denied access" / impostazioni con limitazioni
+
+Android 13+ blocca *Accesso alle notifiche* e *Mostra sopra altre app* per le app
+installate da APK. Per sbloccarle: **Impostazioni → App → AlwaysMu → ⋮ (in alto a destra)
+→ "Consenti impostazioni con limitazioni"**, poi attiva i due permessi.
