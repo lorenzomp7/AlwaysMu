@@ -11,8 +11,21 @@ android {
         applicationId = "com.alwaysmu.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // Su GitHub Actions il numero di build diventa la versione, così ogni APK aggiorna il precedente.
+        val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = build
+        versionName = "1.0.$build"
+    }
+
+    signingConfigs {
+        // Chiave fissa nella repo: tutti gli APK (locali e CI) hanno la stessa firma
+        // e si possono installare come aggiornamento senza disinstallare.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {

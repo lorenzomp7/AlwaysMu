@@ -58,3 +58,13 @@ Struttura del codice (`app/src/main/java/com/alwaysmu/app/`):
 - `MusicApp.kt`: elenco app supportate con i nomi dei pacchetti
 - `MediaListenerService.kt`: serve solo per accedere alle sessioni multimediali
 - `BootReceiver.kt`: riavvio automatico dopo il boot
+
+## Download dell'APK
+
+Ogni push su `main_claude` (o `main`) avvia GitHub Actions (`.github/workflows/build-apk.yml`):
+l'APK viene compilato e pubblicato nella pagina **Releases** della repo
+(`AlwaysMu-1.0.<numero>.apk`). Scarica l'ultima release e installala sul telefono
+(serve consentire l'installazione da origini sconosciute).
+
+Gli APK sono firmati sempre con la stessa chiave (`app/debug.keystore`, chiave di debug
+non segreta), quindi una nuova versione si installa sopra la precedente.
