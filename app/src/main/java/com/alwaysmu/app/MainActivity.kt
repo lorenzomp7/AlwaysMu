@@ -19,6 +19,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
@@ -108,33 +109,72 @@ class MainActivity : AppCompatActivity() {
 
     // ---------- Scelta app ----------
 
+    private var buildingList = false
+
     private fun setupAppChoice() {
-        MusicApp.entries.forEachIndexed { index, app ->
-            val rb = RadioButton(this).apply {
-                id = 1000 + index
-                tag = app
-                textSize = 16f
-            }
-            appGroup.addView(rb)
-        }
         appGroup.setOnCheckedChangeListener { group, checkedId ->
-            val app = group.findViewById<RadioButton>(checkedId)?.tag as? MusicApp ?: return@setOnCheckedChangeListener
-            if (app == prefs.selectedApp) return@setOnCheckedChangeListener
+            if (buildingList) return@setOnCheckedChangeListener
+            val rb = group.findViewById<RadioButton>(checkedId) ?: return@setOnCheckedChangeListener
+            // "Altra app…" (tag null) è gestita dal suo click listener
+            val app = rb.tag as? MusicApp ?: return@setOnCheckedChangeListener
+            if (app.key == prefs.selectedApp.key) return@setOnCheckedChangeListener
             prefs.selectedApp = app
             restartIfRunning()
         }
     }
 
+    /** Ricostruisce l'elenco: prima le app installate, poi quelle mancanti, poi "Altra app…". */
     private fun refreshAppList() {
+        buildingList = true
+        appGroup.removeAllViews()
         val selected = prefs.selectedApp
-        for (i in 0 until appGroup.childCount) {
-            val rb = appGroup.getChildAt(i) as RadioButton
-            val app = rb.tag as MusicApp
-            val installed = app.isInstalled(packageManager)
-            rb.text = if (installed) app.label else getString(R.string.not_installed, app.label)
-            rb.isEnabled = installed
-            if (app == selected && !rb.isChecked) rb.isChecked = true
+        val (installed, missing) = MusicApp.KNOWN.partition { it.isInstalled(packageManager) }
+        var nextId = 1000
+        var checkedId = -1
+        for (app in installed + missing) {
+            val ok = app in installed
+            val rb = RadioButton(this).apply {
+                id = nextId++
+                tag = app
+                textSize = 16f
+                text = if (ok) app.label else getString(R.string.not_installed, app.label)
+                isEnabled = ok
+            }
+            appGroup.addView(rb)
+            if (app.key == selected.key) checkedId = rb.id
         }
+        val custom = MusicApp.findKnown(selected.key) == null
+        val other = RadioButton(this).apply {
+            id = nextId
+            tag = null
+            textSize = 16f
+            text = if (custom) getString(R.string.other_app_selected, selected.label) else getString(R.string.other_app)
+            setOnClickListener { pickOtherApp() }
+        }
+        appGroup.addView(other)
+        if (custom) checkedId = other.id
+        if (checkedId != -1) appGroup.check(checkedId)
+        buildingList = false
+    }
+
+    /** Elenco di tutte le app installate, per scegliere un'app non presente nella lista. */
+    private fun pickOtherApp() {
+        val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val apps = packageManager.queryIntentActivities(launcher, 0)
+            .map { it.activityInfo.packageName to it.loadLabel(packageManager).toString() }
+            .filter { it.first != packageName }
+            .distinctBy { it.first }
+            .sortedBy { it.second.lowercase() }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.other_app_title)
+            .setItems(apps.map { it.second }.toTypedArray()) { _, which ->
+                val (pkg, label) = apps[which]
+                prefs.selectedApp = MusicApp.findKnown(pkg) ?: MusicApp(label, listOf(pkg))
+                restartIfRunning()
+                refreshAppList()
+            }
+            .setOnCancelListener { refreshAppList() }
+            .show()
     }
 
     // ---------- Volume ----------

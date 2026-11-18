@@ -52,6 +52,17 @@ class MusicController(private val context: Context) {
         activeControllers().firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
             ?.packageName
 
+    /** true se l'app ha già una sessione multimediale (cioè è aperta e pronta a suonare). */
+    fun hasSession(pkg: String): Boolean = activeControllers().any { it.packageName == pkg }
+
+    /**
+     * true se l'audio sta passando come una chiamata (modalità comunicazione o Bluetooth SCO/HFP):
+     * è il suono "chiuso" da telefonata.
+     */
+    @Suppress("DEPRECATION")
+    fun isCallLikeAudio(): Boolean =
+        audio.mode == AudioManager.MODE_IN_COMMUNICATION || audio.isBluetoothScoOn
+
     /** Durante chiamate / suoneria non vogliamo far partire la musica. */
     fun isInCall(): Boolean = when (audio.mode) {
         AudioManager.MODE_IN_CALL,

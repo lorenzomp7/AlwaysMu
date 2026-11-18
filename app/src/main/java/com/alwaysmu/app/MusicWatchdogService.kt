@@ -85,8 +85,7 @@ class MusicWatchdogService : Service() {
         when {
             music.isInCall() -> setStatus("Chiamata in corso: non avvio la musica")
             music.isAnyMusicPlaying() -> {
-                val who = music.playingPackage()
-                    ?.let { pkg -> MusicApp.entries.firstOrNull { it.packageName == pkg }?.label ?: pkg }
+                val who = music.playingPackage()?.let { MusicApp.labelFor(it) ?: it }
                 setStatus(if (who != null) "Musica in riproduzione ($who)" else "Musica in riproduzione")
             }
             else -> startPlayback()
@@ -94,47 +93,71 @@ class MusicWatchdogService : Service() {
     }
 
     /**
-     * Sequenza di tentativi:
-     * 1. play diretto (sessione multimediale o tasto PLAY al receiver dell'app)
-     * 2. se dopo 3 s non suona: apre l'app
-     * 3. dopo 6 s: di nuovo play; dopo altri 4 s verifica finale
+     * Se l'app scelta è già aperta basta premere play sulla sua sessione.
+     * Altrimenti la apriamo come farebbe l'utente e solo dopo premiamo play:
+     * avviarla "al buio" col tasto PLAY (broadcast) su alcune app, es. Spotify,
+     * fa partire l'audio come una chiamata (suono chiuso / Bluetooth HFP).
      */
     private fun startPlayback() {
         val app = prefs.selectedApp
-        if (!app.isInstalled(packageManager)) {
+        val pkg = app.installedPackage(packageManager)
+        if (pkg == null) {
             setStatus("${app.label} non è installata")
             return
         }
         attemptInProgress = true
         music.applyVolume(prefs.volumePercent)
-        setStatus("Nessuna musica: avvio ${app.label}…")
 
-        val sentDirect = music.playViaSession(app.packageName) || music.playViaMediaButton(app.packageName)
-        handler.postDelayed({
-            if (music.isAnyMusicPlaying()) {
-                finishAttempt("${app.label} avviata (comando play)")
-                return@postDelayed
-            }
-            val launched = music.launchApp(app.packageName)
-            if (!launched && !sentDirect) {
-                finishAttempt("Impossibile avviare ${app.label}: concedi \"Mostra sopra altre app\"")
-                return@postDelayed
-            }
+        if (music.hasSession(pkg)) {
+            setStatus("Nessuna musica: premo play su ${app.label}…")
+            music.playViaSession(pkg)
             handler.postDelayed({
-                if (!music.playViaSession(app.packageName)) {
-                    if (!music.playViaMediaButton(app.packageName)) music.dispatchSystemPlay()
-                }
-                handler.postDelayed({
-                    if (music.isAnyMusicPlaying()) {
-                        music.applyVolume(prefs.volumePercent)
-                        finishAttempt("${app.label} avviata")
-                    } else {
-                        val hint = if (!music.hasNotificationAccess()) " (attiva l'accesso alle notifiche)" else ""
-                        finishAttempt("${app.label} aperta ma non suona ancora$hint")
+                if (music.isAnyMusicPlaying()) finishPlaying(app) else coldStart(app, pkg)
+            }, FIRST_VERIFY_DELAY_MS)
+        } else {
+            coldStart(app, pkg)
+        }
+    }
+
+    private fun coldStart(app: MusicApp, pkg: String) {
+        if (music.canLaunchFromBackground() && music.launchApp(pkg)) {
+            setStatus("Nessuna musica: apro ${app.label}…")
+            handler.postDelayed({
+                if (!music.isAnyMusicPlaying()) {
+                    if (!music.playViaSession(pkg) && !music.playViaMediaButton(pkg)) {
+                        music.dispatchSystemPlay()
                     }
-                }, VERIFY_DELAY_MS)
+                }
+                handler.postDelayed({ verifyFinal(app) }, VERIFY_DELAY_MS)
             }, LAUNCH_DELAY_MS)
-        }, FIRST_VERIFY_DELAY_MS)
+            return
+        }
+        // Senza "Mostra sopra altre app" Android non ci lascia aprire l'app: ultimo tentativo col tasto PLAY.
+        if (music.playViaMediaButton(pkg)) {
+            setStatus("Nessuna musica: invio play a ${app.label}…")
+            handler.postDelayed({ verifyFinal(app) }, LAUNCH_DELAY_MS)
+        } else {
+            finishAttempt("Impossibile avviare ${app.label}: concedi \"Mostra sopra altre app\"")
+        }
+    }
+
+    private fun verifyFinal(app: MusicApp) {
+        if (music.isAnyMusicPlaying()) {
+            finishPlaying(app)
+        } else {
+            val hint = when {
+                !music.canLaunchFromBackground() -> " (concedi \"Mostra sopra altre app\")"
+                !music.hasNotificationAccess() -> " (attiva l'accesso alle notifiche)"
+                else -> ""
+            }
+            finishAttempt("${app.label} non suona ancora$hint")
+        }
+    }
+
+    private fun finishPlaying(app: MusicApp) {
+        music.applyVolume(prefs.volumePercent)
+        val warn = if (music.isCallLikeAudio()) " ⚠ audio in modalità chiamata (Bluetooth HFP)" else ""
+        finishAttempt("${app.label} avviata$warn")
     }
 
     private fun finishAttempt(status: String) {

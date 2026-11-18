@@ -8,9 +8,17 @@ class Prefs(context: Context) {
     val sp: SharedPreferences =
         context.applicationContext.getSharedPreferences(NAME, Context.MODE_PRIVATE)
 
+    /** App scelta: una delle app note oppure un'app qualsiasi scelta con "Altra app…". */
     var selectedApp: MusicApp
-        get() = MusicApp.fromName(sp.getString(KEY_APP, null))
-        set(v) = sp.edit().putString(KEY_APP, v.name).apply()
+        get() {
+            val pkg = MusicApp.normalizeKey(sp.getString(KEY_APP, null)) ?: return MusicApp.KNOWN.first()
+            MusicApp.findKnown(pkg)?.let { return it }
+            return MusicApp(sp.getString(KEY_CUSTOM_LABEL, null) ?: pkg, listOf(pkg))
+        }
+        set(v) = sp.edit()
+            .putString(KEY_APP, v.key)
+            .putString(KEY_CUSTOM_LABEL, if (MusicApp.findKnown(v.key) == null) v.label else null)
+            .apply()
 
     /** Volume desiderato in percentuale (0-100) del volume multimediale massimo. */
     var volumePercent: Int
@@ -39,6 +47,7 @@ class Prefs(context: Context) {
     companion object {
         private const val NAME = "alwaysmu"
         const val KEY_APP = "selected_app"
+        const val KEY_CUSTOM_LABEL = "custom_label"
         const val KEY_VOLUME = "volume_percent"
         const val KEY_ENFORCE_VOLUME = "enforce_volume"
         const val KEY_KEEP_AWAKE = "keep_awake"

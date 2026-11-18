@@ -3,8 +3,16 @@
 App Android che mantiene **sempre la musica accesa**.
 
 Ogni **30 secondi** controlla se c'è un'app di musica in riproduzione.
-Se non c'è, apre l'app scelta (**Spotify, YouTube Music, Apple Music o Deezer**), preme **play**
+Se non c'è, apre l'app scelta, preme **play**
 e imposta il **volume** scelto.
+
+## App supportate
+
+Spotify, Amazon Music, Deezer, Tidal, Apple Music, YouTube Music, SoundCloud, Qobuz,
+Idagio, Mixcloud, Audiomack, Bandcamp, Brave Browser. Con **"Altra app…"** si può
+scegliere qualsiasi altra app installata.
+
+Il controllo "c'è musica?" vale per qualsiasi app che stia riproducendo audio.
 
 ## Funzioni
 
@@ -19,11 +27,14 @@ e imposta il **volume** scelto.
 
 ## Come fa partire la musica
 
-1. Manda **play** alla sessione multimediale dell'app scelta (serve l'*Accesso alle notifiche*),
-   oppure manda il tasto PLAY direttamente all'app.
-2. Se dopo 3 s non suona, **apre l'app** (serve *Mostra sopra altre app*, perché Android
-   blocca l'apertura di app dal background).
-3. Dopo 6 s manda di nuovo play e verifica.
+1. Se l'app scelta è già aperta, preme **play** sulla sua sessione multimediale
+   (serve l'*Accesso alle notifiche*).
+2. Se è chiusa (o non parte), **apre l'app** come farebbe l'utente (serve *Mostra sopra
+   altre app*) e dopo 6 s preme play.
+3. Solo se non può aprirla manda il tasto PLAY "al buio" all'app: è l'ultimo tentativo
+   perché su alcune app (es. Spotify) fa partire l'audio come una chiamata.
+
+Se l'audio parte in modalità chiamata (Bluetooth HFP, suono "chiuso") lo stato lo segnala con ⚠.
 
 ## Permessi da concedere (dalla schermata principale)
 
