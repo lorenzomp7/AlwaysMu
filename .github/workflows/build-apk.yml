@@ -24,8 +24,9 @@ jobs:
       - name: Compila APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk AlwaysMu-1.0.${{ github.run_number }}.apk
+          ./gradlew assembleStandardDebug assembleCompletaDebug --no-daemon
+          cp app/build/outputs/apk/standard/debug/app-standard-debug.apk AlwaysMu-1.0.${{ github.run_number }}.apk
+          cp app/build/outputs/apk/completa/debug/app-completa-debug.apk AlwaysMu-1.0.${{ github.run_number }}-completa.apk
 
       - name: Carica artefatto
         uses: actions/upload-artifact@v4
@@ -41,5 +42,5 @@ jobs:
           gh release create "$TAG" AlwaysMu-*.apk \
             --target "${{ github.sha }}" \
             --title "AlwaysMu $TAG" \
-            --notes "APK compilato automaticamente dal branch ${{ github.ref_name }} (commit ${{ github.sha }}). Scarica il file .apk qui sotto e installalo sul telefono." \
+            --notes "APK compilato automaticamente dal branch ${{ github.ref_name }} (commit ${{ github.sha }}). AlwaysMu-1.0.${{ github.run_number }}.apk = versione standard (consigliata, si installa senza blocchi di Play Protect). AlwaysMu-1.0.${{ github.run_number }}-completa.apk = con accesso alle notifiche: Play Protect può bloccarla." \
             --latest

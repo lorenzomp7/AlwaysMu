@@ -26,7 +26,7 @@ class MusicController(private val context: Context) {
     // ---------- Permessi ----------
 
     fun hasNotificationAccess(): Boolean =
-        NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+        BuildConfig.HAS_MEDIA_LISTENER && NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
 
     fun canLaunchFromBackground(): Boolean = Settings.canDrawOverlays(context)
 

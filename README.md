@@ -56,10 +56,10 @@ così il controllo resta ogni 30 s anche a schermo spento. Consuma più batteria
 Requisiti: JDK 17+ e Android SDK (platform 35).
 
 ```bash
-./gradlew assembleDebug
+./gradlew assembleStandardDebug assembleCompletaDebug
 ```
 
-L'APK si trova in `app/build/outputs/apk/debug/app-debug.apk`.
+Gli APK si trovano in `app/build/outputs/apk/standard/debug/` e `app/build/outputs/apk/completa/debug/`.
 
 Struttura del codice (`app/src/main/java/com/alwaysmu/app/`):
 
@@ -69,6 +69,19 @@ Struttura del codice (`app/src/main/java/com/alwaysmu/app/`):
 - `MusicApp.kt`: elenco app supportate con i nomi dei pacchetti
 - `MediaListenerService.kt`: serve solo per accedere alle sessioni multimediali
 - `BootReceiver.kt`: riavvio automatico dopo il boot
+
+## Versione standard e versione completa
+
+Ogni release contiene due APK:
+
+- **`AlwaysMu-1.0.N.apk` (standard, consigliata)**: non usa l'accesso alle notifiche.
+  Google Play Protect blocca le app scaricate dal browser che lo chiedono
+  ("App blocked to protect your device"), quindi questa si installa normalmente.
+  Rileva la musica di qualsiasi app; per far ripartire la musica apre l'app scelta e
+  manda il tasto PLAY.
+- **`AlwaysMu-1.0.N-completa.apk`**: in più usa l'accesso alle notifiche per vedere
+  le sessioni multimediali e premere play direttamente sull'app scelta, anche senza aprirla.
+  Play Protect può bloccarne l'installazione.
 
 ## Download dell'APK
 

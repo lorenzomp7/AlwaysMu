@@ -28,6 +28,25 @@ android {
         }
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
+    // standard: senza accesso alle notifiche, si installa senza blocchi di Play Protect.
+    // completa: con accesso alle notifiche (play più preciso), Play Protect può bloccarla.
+    flavorDimensions += "edition"
+    productFlavors {
+        create("standard") {
+            dimension = "edition"
+            buildConfigField("boolean", "HAS_MEDIA_LISTENER", "false")
+        }
+        create("completa") {
+            dimension = "edition"
+            versionNameSuffix = "-completa"
+            buildConfigField("boolean", "HAS_MEDIA_LISTENER", "true")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

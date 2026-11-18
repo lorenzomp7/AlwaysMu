@@ -123,12 +123,21 @@ class MusicWatchdogService : Service() {
         if (music.canLaunchFromBackground() && music.launchApp(pkg)) {
             setStatus("Nessuna musica: apro ${app.label}…")
             handler.postDelayed({
-                if (!music.isAnyMusicPlaying()) {
-                    if (!music.playViaSession(pkg) && !music.playViaMediaButton(pkg)) {
-                        music.dispatchSystemPlay()
-                    }
+                if (music.isAnyMusicPlaying()) {
+                    finishPlaying(app)
+                    return@postDelayed
                 }
-                handler.postDelayed({ verifyFinal(app) }, VERIFY_DELAY_MS)
+                // L'app ora è aperta: play sulla sua sessione (versione completa) o al suo receiver
+                if (!music.playViaSession(pkg) && !music.playViaMediaButton(pkg)) music.dispatchSystemPlay()
+                handler.postDelayed({
+                    if (music.isAnyMusicPlaying()) {
+                        finishPlaying(app)
+                    } else {
+                        // Ultimo tentativo: tasto PLAY di sistema (va all'app multimediale appena aperta)
+                        music.dispatchSystemPlay()
+                        handler.postDelayed({ verifyFinal(app) }, VERIFY_DELAY_MS)
+                    }
+                }, VERIFY_DELAY_MS)
             }, LAUNCH_DELAY_MS)
             return
         }
@@ -147,7 +156,7 @@ class MusicWatchdogService : Service() {
         } else {
             val hint = when {
                 !music.canLaunchFromBackground() -> " (concedi \"Mostra sopra altre app\")"
-                !music.hasNotificationAccess() -> " (attiva l'accesso alle notifiche)"
+                BuildConfig.HAS_MEDIA_LISTENER && !music.hasNotificationAccess() -> " (attiva l'accesso alle notifiche)"
                 else -> ""
             }
             finishAttempt("${app.label} non suona ancora$hint")

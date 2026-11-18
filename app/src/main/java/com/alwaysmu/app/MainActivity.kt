@@ -82,6 +82,7 @@ class MainActivity : AppCompatActivity() {
             MusicWatchdogService.start(this, MusicWatchdogService.ACTION_CHECK_NOW)
         }
 
+        if (!BuildConfig.HAS_MEDIA_LISTENER) notifAccessButton.visibility = android.view.View.GONE
         notifAccessButton.setOnClickListener { openSettings(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS) }
         overlayButton.setOnClickListener {
             openSettings(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
