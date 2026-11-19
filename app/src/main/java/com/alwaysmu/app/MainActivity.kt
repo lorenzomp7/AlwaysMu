@@ -13,6 +13,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.EditText
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.SeekBar
@@ -65,6 +66,13 @@ class MainActivity : AppCompatActivity() {
 
         setupAppChoice()
         setupVolume()
+
+        setupInterval()
+
+        findViewById<CheckBox>(R.id.openAppFirst).apply {
+            isChecked = prefs.openAppFirst
+            setOnCheckedChangeListener { _, checked -> prefs.openAppFirst = checked }
+        }
 
         keepAwake.isChecked = prefs.keepAwake
         keepAwake.setOnCheckedChangeListener { _, checked -> prefs.keepAwake = checked }
@@ -176,6 +184,30 @@ class MainActivity : AppCompatActivity() {
             }
             .setOnCancelListener { refreshAppList() }
             .show()
+    }
+
+    // ---------- Intervallo ----------
+
+    private fun setupInterval() {
+        val label = findViewById<TextView>(R.id.intervalLabel)
+        val input = findViewById<EditText>(R.id.intervalInput)
+        fun show() {
+            label.text = getString(R.string.interval_label, Prefs.formatInterval(prefs.intervalSeconds))
+            input.setText(prefs.intervalSeconds.toString())
+        }
+        show()
+        findViewById<Button>(R.id.intervalButton).setOnClickListener {
+            val v = input.text.toString().trim().toIntOrNull()
+            if (v == null || v < Prefs.MIN_INTERVAL_S || v > Prefs.MAX_INTERVAL_S) {
+                Toast.makeText(this, R.string.interval_invalid, Toast.LENGTH_LONG).show()
+                show()
+                return@setOnClickListener
+            }
+            prefs.intervalSeconds = v
+            show()
+            Toast.makeText(this, getString(R.string.interval_saved, Prefs.formatInterval(v)), Toast.LENGTH_SHORT).show()
+            restartIfRunning()
+        }
     }
 
     // ---------- Volume ----------

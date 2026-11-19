@@ -13,6 +13,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
@@ -31,6 +32,8 @@ class MusicWatchdogService : Service() {
     private lateinit var music: MusicController
     private var wakeLock: PowerManager.WakeLock? = null
     private var attemptInProgress = false
+    /** Quando AlwaysMu ha aperto l'app l'ultima volta (0 = mai / musica partita). */
+    private var lastLaunchAt = 0L
 
     private val checkRunnable = Runnable { runCheck() }
 
@@ -72,7 +75,7 @@ class MusicWatchdogService : Service() {
 
     private fun scheduleNext() {
         handler.removeCallbacks(checkRunnable)
-        handler.postDelayed(checkRunnable, Prefs.CHECK_INTERVAL_MS)
+        handler.postDelayed(checkRunnable, prefs.intervalSeconds * 1000L)
     }
 
     private fun runCheck() {
@@ -93,10 +96,10 @@ class MusicWatchdogService : Service() {
     }
 
     /**
-     * Se l'app scelta è già aperta basta premere play sulla sua sessione.
-     * Altrimenti la apriamo come farebbe l'utente e solo dopo premiamo play:
-     * avviarla "al buio" col tasto PLAY (broadcast) su alcune app, es. Spotify,
-     * fa partire l'audio come una chiamata (suono chiuso / Bluetooth HFP).
+     * Come nella prima versione: prima si preme PLAY senza aprire nulla
+     * (sessione multimediale, tasto PLAY all'app). Solo se dopo qualche secondo
+     * non suona ancora si apre l'app. Con l'opzione "Apri l'app prima di premere play"
+     * si apre subito (utile se il play "al buio" fa partire l'audio come una chiamata).
      */
     private fun startPlayback() {
         val app = prefs.selectedApp
@@ -108,32 +111,42 @@ class MusicWatchdogService : Service() {
         attemptInProgress = true
         music.applyVolume(prefs.volumePercent)
 
-        if (music.hasSession(pkg)) {
-            setStatus("Nessuna musica: premo play su ${app.label}…")
-            music.playViaSession(pkg)
-            handler.postDelayed({
-                if (music.isAnyMusicPlaying()) finishPlaying(app) else coldStart(app, pkg)
-            }, FIRST_VERIFY_DELAY_MS)
-        } else {
-            coldStart(app, pkg)
+        if (prefs.openAppFirst && !music.hasSession(pkg)) {
+            openAndPlay(app, pkg)
+            return
         }
+        setStatus("Nessuna musica rilevata: invio play a ${app.label}…")
+        if (!music.playViaSession(pkg) && !music.playViaMediaButton(pkg)) music.dispatchSystemPlay()
+        handler.postDelayed({
+            if (music.isAnyMusicPlaying()) finishPlaying(app) else openAndPlay(app, pkg)
+        }, FIRST_VERIFY_DELAY_MS)
     }
 
-    private fun coldStart(app: MusicApp, pkg: String) {
+    /** Apre l'app e poi preme play. Non la riapre se è stata aperta da poco senza successo. */
+    private fun openAndPlay(app: MusicApp, pkg: String) {
+        val now = SystemClock.elapsedRealtime()
+        val openedRecently = lastLaunchAt != 0L && now - lastLaunchAt < RELAUNCH_COOLDOWN_MS
+        if (openedRecently) {
+            // Evita di riaprire l'app ad ogni controllo: solo tasto PLAY di sistema.
+            music.dispatchSystemPlay()
+            handler.postDelayed({
+                verifyFinal(app, " (${app.label} già aperta da poco: la riapro tra qualche minuto)")
+            }, VERIFY_DELAY_MS)
+            return
+        }
         if (music.canLaunchFromBackground() && music.launchApp(pkg)) {
+            lastLaunchAt = now
             setStatus("Nessuna musica: apro ${app.label}…")
             handler.postDelayed({
                 if (music.isAnyMusicPlaying()) {
                     finishPlaying(app)
                     return@postDelayed
                 }
-                // L'app ora è aperta: play sulla sua sessione (versione completa) o al suo receiver
                 if (!music.playViaSession(pkg) && !music.playViaMediaButton(pkg)) music.dispatchSystemPlay()
                 handler.postDelayed({
                     if (music.isAnyMusicPlaying()) {
                         finishPlaying(app)
                     } else {
-                        // Ultimo tentativo: tasto PLAY di sistema (va all'app multimediale appena aperta)
                         music.dispatchSystemPlay()
                         handler.postDelayed({ verifyFinal(app) }, VERIFY_DELAY_MS)
                     }
@@ -143,14 +156,13 @@ class MusicWatchdogService : Service() {
         }
         // Senza "Mostra sopra altre app" Android non ci lascia aprire l'app: ultimo tentativo col tasto PLAY.
         if (music.playViaMediaButton(pkg)) {
-            setStatus("Nessuna musica: invio play a ${app.label}…")
-            handler.postDelayed({ verifyFinal(app) }, LAUNCH_DELAY_MS)
+            handler.postDelayed({ verifyFinal(app) }, VERIFY_DELAY_MS)
         } else {
             finishAttempt("Impossibile avviare ${app.label}: concedi \"Mostra sopra altre app\"")
         }
     }
 
-    private fun verifyFinal(app: MusicApp) {
+    private fun verifyFinal(app: MusicApp, extra: String = "") {
         if (music.isAnyMusicPlaying()) {
             finishPlaying(app)
         } else {
@@ -159,11 +171,12 @@ class MusicWatchdogService : Service() {
                 BuildConfig.HAS_MEDIA_LISTENER && !music.hasNotificationAccess() -> " (attiva l'accesso alle notifiche)"
                 else -> ""
             }
-            finishAttempt("${app.label} non suona ancora$hint")
+            finishAttempt("Nessuna musica rilevata dopo il play su ${app.label}$hint$extra")
         }
     }
 
     private fun finishPlaying(app: MusicApp) {
+        lastLaunchAt = 0L
         music.applyVolume(prefs.volumePercent)
         val warn = if (music.isCallLikeAudio()) " ⚠ audio in modalità chiamata (Bluetooth HFP)" else ""
         finishAttempt("${app.label} avviata$warn")
@@ -188,7 +201,7 @@ class MusicWatchdogService : Service() {
             .apply { setReferenceCounted(false) }
             .also { wakeLock = it }
         // Rinnovato ad ogni controllo: se il servizio muore si rilascia da solo.
-        wl.acquire(Prefs.CHECK_INTERVAL_MS * 3)
+        wl.acquire(prefs.intervalSeconds * 2000L + 60_000L)
     }
 
     private fun releaseWakeLock() {
@@ -227,7 +240,10 @@ class MusicWatchdogService : Service() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(getString(R.string.notif_title, prefs.selectedApp.label, prefs.volumePercent))
+            .setContentTitle(getString(
+                R.string.notif_title, prefs.selectedApp.label, prefs.volumePercent,
+                Prefs.formatInterval(prefs.intervalSeconds)
+            ))
             .setContentText(text)
             .setContentIntent(open)
             .addAction(0, getString(R.string.stop), stop)
@@ -251,6 +267,8 @@ class MusicWatchdogService : Service() {
         private const val FIRST_VERIFY_DELAY_MS = 3_000L
         private const val LAUNCH_DELAY_MS = 6_000L
         private const val VERIFY_DELAY_MS = 4_000L
+        /** Dopo un'apertura senza musica, non riaprire l'app prima di 5 minuti. */
+        private const val RELAUNCH_COOLDOWN_MS = 5 * 60_000L
 
         const val ACTION_STOP = "com.alwaysmu.app.STOP"
         const val ACTION_CHECK_NOW = "com.alwaysmu.app.CHECK_NOW"

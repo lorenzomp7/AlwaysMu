@@ -2,7 +2,7 @@
 
 App Android che mantiene **sempre la musica accesa**.
 
-Ogni **30 secondi** controlla se c'è un'app di musica in riproduzione.
+A intervalli regolari (**da 10 secondi a 1 ora**, predefinito 30 s) controlla se c'è un'app di musica in riproduzione.
 Se non c'è, apre l'app scelta, preme **play**
 e imposta il **volume** scelto.
 
@@ -19,22 +19,23 @@ Il controllo "c'è musica?" vale per qualsiasi app che stia riproducendo audio.
 - Scelta dell'app musicale (le app non installate compaiono disattivate).
 - Volume musica in percentuale (0–100%):
   - viene impostato ogni volta che AlwaysMu fa partire la musica;
-  - con l'opzione *"Mantieni questo volume ad ogni controllo"* viene reimpostato ogni 30 s.
-- Controllo ogni 30 s con un servizio in primo piano (notifica fissa con stato e pulsante *Ferma*).
+  - con l'opzione *"Mantieni questo volume ad ogni controllo"* viene reimpostato ad ogni controllo.
+- Controllo periodico (intervallo impostabile da 10 s a 1 ora) con un servizio in primo piano (notifica fissa con stato e pulsante *Ferma*).
 - Non avvia la musica durante chiamate o con il telefono che squilla.
 - Riparte da solo dopo il riavvio del telefono, se era attivo.
 - Pulsante *Controlla ora* per un controllo immediato.
 
 ## Come fa partire la musica
 
-1. Se l'app scelta è già aperta, preme **play** sulla sua sessione multimediale
-   (serve l'*Accesso alle notifiche*).
-2. Se è chiusa (o non parte), **apre l'app** come farebbe l'utente (serve *Mostra sopra
-   altre app*) e dopo 6 s preme play.
-3. Solo se non può aprirla manda il tasto PLAY "al buio" all'app: è l'ultimo tentativo
-   perché su alcune app (es. Spotify) fa partire l'audio come una chiamata.
+1. Preme **play** senza aprire nulla: sulla sessione multimediale dell'app (versione
+   completa) o col tasto PLAY inviato all'app scelta.
+2. Se dopo 3 s non suona, **apre l'app** (serve *Mostra sopra altre app*) e preme di nuovo play.
+3. Se l'app è stata aperta da meno di 5 minuti senza risultato, non la riapre ad ogni
+   controllo: manda solo il tasto PLAY.
 
-Se l'audio parte in modalità chiamata (Bluetooth HFP, suono "chiuso") lo stato lo segnala con ⚠.
+Con l'opzione *"Apri l'app musicale prima di premere play"* l'app viene aperta subito
+(utile se il play "al buio" fa partire l'audio come una chiamata, suono "chiuso").
+Se l'audio parte in modalità chiamata (Bluetooth HFP) lo stato lo segnala con ⚠.
 
 ## Permessi da concedere (dalla schermata principale)
 
@@ -46,7 +47,7 @@ Se l'audio parte in modalità chiamata (Bluetooth HFP, suono "chiuso") lo stato 
 | Ignora ottimizzazione batteria | Evitare che Android fermi il servizio |
 
 L'opzione *"Controlla anche a schermo spento"* (attiva di default) tiene sveglia la CPU,
-così il controllo resta ogni 30 s anche a schermo spento. Consuma più batteria.
+così il controllo resta regolare anche a schermo spento. Consuma più batteria.
 
 > Nota: l'app musicale riprende l'ultima coda o playlist. Se non c'è niente da riprendere
 > (es. app appena installata o senza login), apre l'app ma potrebbe non suonare.
@@ -64,7 +65,7 @@ Gli APK si trovano in `app/build/outputs/apk/standard/debug/` e `app/build/outpu
 Struttura del codice (`app/src/main/java/com/alwaysmu/app/`):
 
 - `MainActivity.kt`: interfaccia (scelta app, volume, permessi, avvio/stop)
-- `MusicWatchdogService.kt`: servizio in primo piano con il controllo ogni 30 s
+- `MusicWatchdogService.kt`: servizio in primo piano con il controllo periodico
 - `MusicController.kt`: rilevamento musica, volume, comandi play, apertura app
 - `MusicApp.kt`: elenco app supportate con i nomi dei pacchetti
 - `MediaListenerService.kt`: serve solo per accedere alle sessioni multimediali

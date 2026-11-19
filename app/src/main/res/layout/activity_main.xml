@@ -104,6 +104,42 @@
             style="@style/SectionTitle"
             android:text="@string/section_service" />
 
+        <TextView
+            android:id="@+id/intervalLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/intervalInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/interval_hint"
+                android:importantForAutofill="no"
+                android:inputType="number"
+                android:maxLength="4" />
+
+            <Button
+                android:id="@+id/intervalButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/interval_set" />
+        </LinearLayout>
+
+        <CheckBox
+            android:id="@+id/openAppFirst"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/open_app_first" />
+
         <Button
             android:id="@+id/toggleButton"
             android:layout_width="match_parent"
