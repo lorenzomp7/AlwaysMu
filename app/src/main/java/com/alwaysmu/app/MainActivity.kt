@@ -14,13 +14,15 @@ import android.provider.Settings
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import android.view.View
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
@@ -29,7 +31,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
     private lateinit var music: MusicController
 
-    private lateinit var appGroup: RadioGroup
+    private lateinit var appMenu: MaterialAutoCompleteTextView
+    private lateinit var appMenuNote: TextView
     private lateinit var volumeLabel: TextView
     private lateinit var volumeBar: SeekBar
     private lateinit var enforceVolume: CheckBox
@@ -53,7 +56,9 @@ class MainActivity : AppCompatActivity() {
         prefs = Prefs(this)
         music = MusicController(this)
 
-        appGroup = findViewById(R.id.appGroup)
+        appMenu = findViewById(R.id.appMenu)
+        appMenuNote = findViewById(R.id.appMenuNote)
+        applyInsets()
         volumeLabel = findViewById(R.id.volumeLabel)
         volumeBar = findViewById(R.id.volumeBar)
         enforceVolume = findViewById(R.id.enforceVolume)
@@ -90,7 +95,7 @@ class MainActivity : AppCompatActivity() {
             MusicWatchdogService.start(this, MusicWatchdogService.ACTION_CHECK_NOW)
         }
 
-        if (!BuildConfig.HAS_MEDIA_LISTENER) notifAccessButton.visibility = android.view.View.GONE
+        if (!BuildConfig.HAS_MEDIA_LISTENER) notifAccessButton.visibility = View.GONE
         notifAccessButton.setOnClickListener { openSettings(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS) }
         overlayButton.setOnClickListener {
             openSettings(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
@@ -118,52 +123,49 @@ class MainActivity : AppCompatActivity() {
 
     // ---------- Scelta app ----------
 
-    private var buildingList = false
+    /** Voci del menù: app installate (+ eventuale app scelta con "Altra app…"); null = "Altra app…". */
+    private var menuEntries: List<MusicApp?> = emptyList()
 
     private fun setupAppChoice() {
-        appGroup.setOnCheckedChangeListener { group, checkedId ->
-            if (buildingList) return@setOnCheckedChangeListener
-            val rb = group.findViewById<RadioButton>(checkedId) ?: return@setOnCheckedChangeListener
-            // "Altra app…" (tag null) è gestita dal suo click listener
-            val app = rb.tag as? MusicApp ?: return@setOnCheckedChangeListener
-            if (app.key == prefs.selectedApp.key) return@setOnCheckedChangeListener
-            prefs.selectedApp = app
-            restartIfRunning()
+        appMenu.setOnItemClickListener { _, _, position, _ ->
+            val app = menuEntries.getOrNull(position)
+            if (app == null) {
+                pickOtherApp()
+                return@setOnItemClickListener
+            }
+            if (app.key != prefs.selectedApp.key) {
+                prefs.selectedApp = app
+                restartIfRunning()
+            }
+            refreshAppList()
         }
     }
 
-    /** Ricostruisce l'elenco: prima le app installate, poi quelle mancanti, poi "Altra app…". */
+    /** Ricostruisce il menù a tendina con le app installate e mostra la scelta attuale. */
     private fun refreshAppList() {
-        buildingList = true
-        appGroup.removeAllViews()
         val selected = prefs.selectedApp
         val (installed, missing) = MusicApp.KNOWN.partition { it.isInstalled(packageManager) }
-        var nextId = 1000
-        var checkedId = -1
-        for (app in installed + missing) {
-            val ok = app in installed
-            val rb = RadioButton(this).apply {
-                id = nextId++
-                tag = app
-                textSize = 16f
-                text = if (ok) app.label else getString(R.string.not_installed, app.label)
-                isEnabled = ok
+        val entries = mutableListOf<MusicApp?>()
+        entries += installed
+        if (installed.none { it.key == selected.key }) entries += selected
+        entries += null
+        menuEntries = entries
+
+        val labels = entries.map { app ->
+            when {
+                app == null -> getString(R.string.other_app)
+                MusicApp.findKnown(app.key) == null -> getString(R.string.other_app_selected, app.label)
+                !app.isInstalled(packageManager) -> getString(R.string.not_installed, app.label)
+                else -> app.label
             }
-            appGroup.addView(rb)
-            if (app.key == selected.key) checkedId = rb.id
         }
-        val custom = MusicApp.findKnown(selected.key) == null
-        val other = RadioButton(this).apply {
-            id = nextId
-            tag = null
-            textSize = 16f
-            text = if (custom) getString(R.string.other_app_selected, selected.label) else getString(R.string.other_app)
-            setOnClickListener { pickOtherApp() }
-        }
-        appGroup.addView(other)
-        if (custom) checkedId = other.id
-        if (checkedId != -1) appGroup.check(checkedId)
-        buildingList = false
+        appMenu.setSimpleItems(labels.toTypedArray())
+        val idx = entries.indexOfFirst { it?.key == selected.key }
+        appMenu.setText(labels.getOrNull(idx) ?: selected.label, false)
+
+        appMenuNote.text = if (missing.isEmpty()) "" else
+            getString(R.string.app_menu_note, missing.joinToString(", ") { it.label })
+        appMenuNote.visibility = if (missing.isEmpty()) View.GONE else View.VISIBLE
     }
 
     /** Elenco di tutte le app installate, per scegliere un'app non presente nella lista. */
@@ -184,6 +186,17 @@ class MainActivity : AppCompatActivity() {
             }
             .setOnCancelListener { refreshAppList() }
             .show()
+    }
+
+    /** Android 15 disegna l'app sotto barra di stato e di navigazione: lasciamo lo spazio giusto. */
+    private fun applyInsets() {
+        val root = findViewById<View>(R.id.root)
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            v.setPadding(bars.left, bars.top, bars.right, 0)
+            findViewById<View>(R.id.scroll).setPadding(0, 0, 0, bars.bottom)
+            insets
+        }
     }
 
     // ---------- Intervallo ----------

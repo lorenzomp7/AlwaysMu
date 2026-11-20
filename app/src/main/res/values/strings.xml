@@ -3,6 +3,8 @@
     <string name="intro">A intervalli regolari AlwaysMu controlla che ci sia musica in riproduzione. Se non c\'è, apre l\'app scelta, preme play e imposta il volume.</string>
 
     <string name="section_app">App musicale</string>
+    <string name="app_menu_hint">App da avviare</string>
+    <string name="app_menu_note">Nel menù ci sono le app musicali installate. Non installate: %1$s.</string>
     <string name="other_app">Altra app…</string>
     <string name="other_app_selected">Altra app: %1$s</string>
     <string name="other_app_title">Scegli l\'app da avviare</string>
