@@ -19,6 +19,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -209,6 +210,10 @@ class MainActivity : AppCompatActivity() {
             input.setText(prefs.intervalSeconds.toString())
         }
         show()
+        input.setOnEditorActionListener { _, _, _ ->
+            findViewById<Button>(R.id.intervalButton).performClick()
+            true
+        }
         findViewById<Button>(R.id.intervalButton).setOnClickListener {
             val v = input.text.toString().trim().toIntOrNull()
             if (v == null || v < Prefs.MIN_INTERVAL_S || v > Prefs.MAX_INTERVAL_S) {
@@ -218,9 +223,17 @@ class MainActivity : AppCompatActivity() {
             }
             prefs.intervalSeconds = v
             show()
+            hideKeyboard(input)
             Toast.makeText(this, getString(R.string.interval_saved, Prefs.formatInterval(v)), Toast.LENGTH_SHORT).show()
             restartIfRunning()
         }
+    }
+
+    /** Chiude la tastiera e toglie il cursore dal campo dei secondi. */
+    private fun hideKeyboard(field: View) {
+        getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(field.windowToken, 0)
+        field.clearFocus()
+        findViewById<View>(R.id.root).requestFocus()
     }
 
     // ---------- Volume ----------
