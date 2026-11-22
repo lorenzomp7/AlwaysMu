@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+# Le esecuzioni che pubblicano vanno in fila: così la seconda vede la release della prima.
+concurrency:
+  group: alwaysmu-release
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -42,6 +47,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Una sola release per commit: lo stesso commit spinto su main_claude e su main
+          # (o rilanciato a mano) non crea un duplicato.
+          EXISTING=$(gh api "repos/${{ github.repository }}/releases?per_page=100" --paginate \
+            --jq '.[] | select(.target_commitish == "${{ github.sha }}") | .tag_name' | head -1)
+          if [ -n "$EXISTING" ]; then
+            echo "::notice::Il commit ${{ github.sha }} è già pubblicato come $EXISTING: nessuna nuova release."
+            exit 0
+          fi
           TAG="v1.0.${{ github.run_number }}"
           gh release create "$TAG" AlwaysMu-*.apk \
             --target "${{ github.sha }}" \
