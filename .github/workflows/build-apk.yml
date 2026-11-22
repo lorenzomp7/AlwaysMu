@@ -21,9 +21,13 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Compila APK
+      - name: Test unitari
         run: |
           chmod +x gradlew
+          ./gradlew testStandardDebugUnitTest --no-daemon
+
+      - name: Compila APK
+        run: |
           ./gradlew assembleStandardDebug assembleCompletaDebug --no-daemon
           cp app/build/outputs/apk/standard/debug/app-standard-debug.apk AlwaysMu-1.0.${{ github.run_number }}.apk
           cp app/build/outputs/apk/completa/debug/app-completa-debug.apk AlwaysMu-1.0.${{ github.run_number }}-completa.apk
