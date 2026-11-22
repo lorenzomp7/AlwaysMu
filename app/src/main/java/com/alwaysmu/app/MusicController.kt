@@ -11,7 +11,6 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.view.KeyEvent
 import androidx.core.app.NotificationManagerCompat
-import kotlin.math.roundToInt
 
 /**
  * Tutte le operazioni "a basso livello": capire se c'è musica, impostare il volume,
@@ -75,7 +74,7 @@ class MusicController(private val context: Context) {
 
     fun applyVolume(percent: Int): Boolean {
         val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        val target = (max * percent.coerceIn(0, 100) / 100.0).roundToInt().coerceIn(0, max)
+        val target = VolumeMath.indexFor(percent, max)
         return try {
             if (audio.getStreamVolume(AudioManager.STREAM_MUSIC) != target) {
                 audio.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0)
@@ -89,8 +88,7 @@ class MusicController(private val context: Context) {
 
     fun currentVolumePercent(): Int {
         val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        if (max == 0) return 0
-        return (audio.getStreamVolume(AudioManager.STREAM_MUSIC) * 100.0 / max).roundToInt()
+        return VolumeMath.percentFor(audio.getStreamVolume(AudioManager.STREAM_MUSIC), max)
     }
 
     // ---------- Avvio riproduzione ----------

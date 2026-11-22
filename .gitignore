@@ -10,3 +10,7 @@
 .cxx
 *.apk
 *.aab
+
+# Claude Code: impostazioni personali e stato degli hook (non versionati)
+.claude/settings.local.json
+.claude/hooks/.state/
