@@ -13,6 +13,12 @@ AGENTS.md (importato sopra) vale per tutti gli agenti; qui solo ciò che riguard
 - Alla fine riporta: cosa è cambiato, comandi eseguiti con esito, cosa resta da fare.
 - Subagenti solo se l'utente lo chiede. Il caso più utile: una revisione indipendente del diff prima di chiudere un compito grande.
 
+### Ambiente (sessioni cloud)
+
+- All'avvio di ogni sessione cloud `.claude/hooks/session_start.sh` avvia in background l'SDK Android in `~/android-sdk` (alcuni minuti; serve `dl.google.com` tra i domini consentiti dell'ambiente).
+- Prima di qualunque comando Gradle esegui `bash .claude/hooks/wait_setup.sh android`: aspetta la fine dell'installazione o spiega perché è fallita. Se fallisce per la rete, dillo all'utente invece di aggirare il problema.
+- Se qualcosa manca, i dettagli sono in `.claude/hooks/.state/session-setup.log`; per ripetere la preparazione: `CLAUDE_SETUP_FORCE=1 bash .claude/hooks/session_start.sh`.
+
 ### Hook automatici (`.claude/settings.json`)
 
 - Gli hook partono tramite `.claude/hooks/run.sh`, che usa il primo Python 3.9+ disponibile (`python3`, `python` o `py`). Se Python manca vengono saltati senza bloccare.
