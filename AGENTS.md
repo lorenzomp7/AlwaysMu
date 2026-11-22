@@ -37,3 +37,11 @@ dichiarare i test passati.
 - Il flavor `standard` non deve dichiarare l'accesso alle notifiche (Play Protect).
 - `debug.keystore` è voluto (firma stabile tra build): non cambiarlo.
 - Testi dell'interfaccia in italiano (`res/values/strings.xml`).
+
+## Autore dei commit
+
+- I commit vanno a nome di Lorenzo, così risulta tra i contributor della repo:
+  `git -c user.name="Lorenzo Mainetti" -c user.email="119352170+lorenzomp7@users.noreply.github.com" commit ...`
+- L'agente si indica come co-autore con la riga `Co-Authored-By:` nel messaggio.
+- Per i cambi solo di documentazione aggiungi `[skip ci]` al titolo, così non
+  viene pubblicata una release APK inutile.
