@@ -1,0 +1,12 @@
+{
+  "watch": ["app/*", "*.gradle.kts", "gradle/*", "gradle.properties"],
+  "steps": [
+    {
+      "name": "test JVM (flavor standard)",
+      "probe": ["bash", ".claude/hooks/wait_setup.sh", "android", "0"],
+      "run": ["sh", "gradlew", "--quiet", "testStandardDebugUnitTest"],
+      "timeout": 540,
+      "setup": "SDK Android non ancora pronto: vedi bash .claude/hooks/wait_setup.sh android"
+    }
+  ]
+}
