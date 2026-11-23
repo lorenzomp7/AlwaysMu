@@ -1,0 +1,14 @@
+{
+  "_nota": "Componenti che possono essere esportati (raggiungibili da altre app). Il controllo della release fallisce per ogni differenza: aggiungine uno solo se serve davvero. ProfileInstallReceiver arriva da androidx (appcompat) ed è protetto da android.permission.DUMP, che hanno solo adb e il sistema.",
+  "standard": [
+    "com.alwaysmu.app.MainActivity",
+    "com.alwaysmu.app.BootReceiver",
+    "androidx.profileinstaller.ProfileInstallReceiver"
+  ],
+  "completa": [
+    "com.alwaysmu.app.MainActivity",
+    "com.alwaysmu.app.BootReceiver",
+    "com.alwaysmu.app.MediaListenerService",
+    "androidx.profileinstaller.ProfileInstallReceiver"
+  ]
+}

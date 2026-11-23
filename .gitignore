@@ -14,3 +14,7 @@
 # Claude Code: impostazioni personali e stato degli hook (non versionati)
 .claude/settings.local.json
 .claude/hooks/.state/
+
+# Risultati di scripts/audit_app_musicali.py (APK delle app e log del telefono)
+/audit-app-musicali/
+__pycache__/

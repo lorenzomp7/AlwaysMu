@@ -37,6 +37,42 @@ jobs:
           cp app/build/outputs/apk/standard/debug/app-standard-debug.apk AlwaysMu-1.0.${{ github.run_number }}.apk
           cp app/build/outputs/apk/completa/debug/app-completa-debug.apk AlwaysMu-1.0.${{ github.run_number }}-completa.apk
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # REA (morluto/rea, MIT) legge la firma degli APK senza eseguirli.
+      # Se la firma cambia il telefono rifiuta l'aggiornamento: meglio fermarsi qui.
+      - name: Controllo firma e componenti esportati
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m unittest discover -s scripts
+          npm install --global rea-agents@6.10.1
+          mkdir -p firma
+          # Ultima release pubblicata: il nuovo APK deve avere la stessa firma.
+          PREV=$(gh api "repos/${{ github.repository }}/releases/latest" \
+            --jq '[.assets[] | select(.name | test("^AlwaysMu-[0-9.]+\\.apk$"))][0].id // empty' 2>/dev/null || true)
+          if [ -n "$PREV" ]; then
+            gh api -H "Accept: application/octet-stream" \
+              "repos/${{ github.repository }}/releases/assets/$PREV" > firma/ultima-release.apk
+          else
+            echo "::warning::Nessuna release precedente: confronto solo con app/debug.keystore."
+          fi
+          for apk in AlwaysMu-*.apk firma/*.apk; do
+            [ -f "$apk" ] || continue
+            rea inspect-apk-signature "$PWD/$apk" --json > "firma/$(basename "$apk" .apk).json"
+          done
+          ATTESO=$(keytool -list -v -keystore app/debug.keystore -storepass android \
+            -alias androiddebugkey 2>/dev/null | awk '/SHA256:/ {print $2; exit}')
+          python3 scripts/check_release_apk.py firma --atteso "$ATTESO" firma/*.json
+          manifest() {
+            find "app/build/intermediates/packaged_manifests/$1" \
+              "app/build/intermediates/merged_manifest/$1" -name AndroidManifest.xml 2>/dev/null | head -1
+          }
+          python3 scripts/check_release_apk.py componenti \
+            "standard=$(manifest standardDebug)" "completa=$(manifest completaDebug)"
+
       - name: Carica artefatto
         uses: actions/upload-artifact@v4
         with:

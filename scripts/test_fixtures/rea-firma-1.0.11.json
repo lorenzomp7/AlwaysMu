@@ -1,0 +1,73 @@
+{
+  "_nota": "Estratto di rea inspect-apk-signature --json (rea-agents 6.10.1) su AlwaysMu-1.0.11.apk",
+  "normalized_result": {
+    "schemes": {
+      "v1": {
+        "present": false,
+        "has_manifest": false,
+        "signature_files": [],
+        "block_files": [],
+        "signers": []
+      },
+      "v2": {
+        "present": true,
+        "signers": [
+          {
+            "uninterpreted_signed_data_bytes": 4,
+            "uninterpreted_signer_bytes": 0,
+            "certificate": {
+              "sha256_fingerprint": "4b0ff55d9756765801b00e967e1b843b983778b59d3230255589e6e2d9125049",
+              "subject": "C=US\nO=Android\nCN=Android Debug",
+              "issuer": "C=US\nO=Android\nCN=Android Debug",
+              "serial_number": "1867DEE835452976",
+              "not_before": "2026-11-18T12:26:37.000Z",
+              "not_after": "2054-04-05T12:26:37.000Z",
+              "public_key_algorithm": "rsa"
+            },
+            "digests": [
+              {
+                "uninterpreted_bytes": 0,
+                "signature_algorithm_id": 259,
+                "algorithm": "sha256",
+                "declared_digest_hex": "38d453a5d406f41755852919993d8f783645475c44e204462943028d1971c45f",
+                "matches_apk": true
+              }
+            ],
+            "signatures": [
+              {
+                "signature_algorithm_id": 259,
+                "algorithm": "sha256",
+                "signature_bytes": 256,
+                "uninterpreted_bytes": 0
+              }
+            ],
+            "public_key_bytes": 294,
+            "min_sdk": null,
+            "max_sdk": null
+          }
+        ],
+        "uninterpreted_bytes": 0
+      },
+      "v3": {
+        "present": false,
+        "signers": [],
+        "uninterpreted_bytes": 0
+      },
+      "v3.1": {
+        "present": false,
+        "signers": [],
+        "uninterpreted_bytes": 0
+      }
+    },
+    "posture": {
+      "v1_only": false,
+      "schemes_agree_on_signer": true,
+      "signer_change_declared_by_rotation": false,
+      "v1_signers_match_block_signers": null,
+      "rotation_present": false,
+      "source_stamp_present": false,
+      "strongest_scheme": "v2",
+      "self_consistent": true
+    }
+  }
+}

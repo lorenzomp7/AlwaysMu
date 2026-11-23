@@ -12,6 +12,12 @@ description: Come vengono pubblicati gli APK di AlwaysMu e come evitare release 
 - Una sola release per commit: se il commit ha già una release (stesso commit spinto
   su entrambi i branch, o rilancio manuale) la pubblicazione viene saltata.
 - Le esecuzioni che pubblicano vanno in fila (`concurrency: alwaysmu-release`).
+- Prima di pubblicare, il passo «Controllo firma e componenti esportati» blocca la release se:
+  - un APK nuovo o quello dell'ultima release non è firmato con il certificato di
+    `app/debug.keystore` (letto con `rea inspect-apk-signature`, REA di morluto);
+  - i componenti esportati del manifest unito non sono esattamente quelli di
+    `scripts/componenti-esportati.json`.
+  Il codice è in `scripts/check_release_apk.py`, con test in `scripts/test_check_release_apk.py`.
 - Sulle pull request gira solo `.github/workflows/test.yml` (test di entrambi i flavor).
 
 ## Regole
@@ -26,7 +32,10 @@ description: Come vengono pubblicati gli APK di AlwaysMu e come evitare release 
   ha versione 1 e non aggiorna un APK scaricato dalle release.
 
 ## Prima di pubblicare
-1. `./gradlew testStandardDebugUnitTest testCompletaDebugUnitTest` verdi.
+1. `./gradlew testStandardDebugUnitTest testCompletaDebugUnitTest` e
+   `python3 -m unittest discover -s scripts` verdi.
+   Se aggiungi un componente con `android:exported="true"` (o una libreria che lo porta),
+   aggiornalo in `scripts/componenti-esportati.json` e spiega all'utente perché serve.
 2. La pull request ha `Test` verde su GitHub.
 3. Scrivi all'utente cosa cambia per chi usa l'app e quale APK scaricare
    (`AlwaysMu-1.0.N.apk` consigliato, `-completa` solo se serve l'accesso alle notifiche).
