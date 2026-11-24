@@ -24,7 +24,7 @@ Lavora su `main_claude` salvo indicazione diversa: ogni push su `main_claude` o
 | APK | `./gradlew assembleStandardDebug assembleCompletaDebug` |
 | Test degli script (`scripts/`) | `python3 -m unittest discover -s scripts` |
 | REA in Claude Code e Claude Desktop (Windows, una volta) | `powershell -ExecutionPolicy Bypass -File scripts\installa-rea.ps1` |
-| Audit delle app musicali (sul PC, telefono collegato) | `python scripts/audit_app_musicali.py --sessioni` → `docs/compatibilita.md` |
+| Audit delle app musicali dagli APK (senza telefono) | `python3 scripts/audit_app_musicali.py --apk <file o cartelle>` → `docs/compatibilita.md` |
 
 I test JVM stanno in `app/src/test/`. Esegui la verifica standard prima di
 dichiarare finito un cambio; se l'SDK Android non è disponibile dillo invece di

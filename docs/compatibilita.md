@@ -4,24 +4,21 @@ Che cosa offre ognuna delle 13 app di `MusicApp.KNOWN` e quale metodo di avvio
 funziona davvero. Serve ai punti 8 (ripresa con `EXTRA_RECENT`), 9 (`MethodRanker`),
 13 (riproduci qualcosa con ricerca vuota) e 21 (pulsante «Prova questa app») del Piano.
 
-Stato: **da compilare**. La parte «dichiarato» si riempie con REA (morluto/rea);
+Stato: **da compilare**. La parte «dichiarato» si riempie dagli APK delle app;
 la parte «provato» va fatta sul telefono, app per app.
 
 ## Come si aggiorna, tutto dalla chat
 
-Apri **Claude Code sul PC Windows** nella cartella della repo (branch `main_claude`),
-collega il telefono con il debug USB attivo e scrivi:
+Manda gli APK (`.apk`, `.apks`, `.xapk` o `.apkm`) in una chat di Claude Code o Claude,
+oppure, in Claude Code sul PC, indica la cartella dove li hai scaricati, e scrivi:
 
-> Fai l'audit delle app musicali.
+> Fai l'audit delle app musicali con questi APK.
 
-Claude Code segue la skill `audit-app-musicali`: se serve installa da solo REA e i
-prerequisiti (`scripts\installa-rea.ps1 -SenzaDomande`, costo 0 €), legge i manifest,
-ti chiede di far partire la musica app per app, riempie la tabella qui sotto e fa il
-commit. A te restano solo le azioni sul telefono.
-
-Lo stesso funziona da una chat dell'app Claude Desktop collegata al PC (cartella della
-repo aggiunta), e REA è disponibile anche come strumento nelle chat di Claude Desktop
-dopo l'installazione. Dal cloud o dal telefono no: il telefono deve essere collegato al PC.
+Claude segue la skill `audit-app-musicali`: analizza i manifest
+(`scripts/audit_app_musicali.py --apk`), riempie la tabella qui sotto e fa il commit.
+Il telefono non serve. Il motore è REA (`rea inspect-android-package`) quando è installato
+sul PC (`scripts\installa-rea.ps1`, 0 €), altrimenti il lettore interno `scripts/axml.py`,
+che legge il manifest binario senza programmi esterni.
 
 Si leggono solo le dichiarazioni dei manifest e lo stato delle sessioni, per
 interoperabilità: nessun codice delle app viene copiato.
@@ -40,7 +37,8 @@ Che cosa significa ogni colonna:
 - **PLAY_FROM_SEARCH**: attività con `android.media.action.MEDIA_PLAY_FROM_SEARCH`,
   da usare quando non c'è niente da riprendere (punto 13).
 - **Sessione (azioni)**: `dumpsys media_session` durante la riproduzione: stato e azioni
-  che la sessione dichiara (`PLAY`, `PLAY_FROM_SEARCH`, …).
+  che la sessione dichiara (`PLAY`, `PLAY_FROM_SEARCH`, …). Solo con un telefono
+  collegato (`--sessione`); dagli APK resta «non provata».
 
 | App | Pacchetto | MediaBrowserService | Media3 session | MEDIA_BUTTON | PLAY_FROM_SEARCH | Sessione (azioni) |
 |---|---|---|---|---|---|---|

@@ -27,7 +27,7 @@ AGENTS.md (importato sopra) vale per tutti gli agenti; qui solo ciò che riguard
 
 ### Skill
 
-- Di progetto: `watchdog-change` (rilevamento musica, avvio app, volume, intervalli, permessi), `apk-release` (come escono gli APK, prima di ogni push su `main` o `main_claude`) e `audit-app-musicali` (REA sul PC con il telefono collegato → `docs/compatibilita.md`).
+- Di progetto: `watchdog-change` (rilevamento musica, avvio app, volume, intervalli, permessi), `apk-release` (come escono gli APK, prima di ogni push su `main` o `main_claude`) e `audit-app-musicali` (APK dati da Lorenzo → manifest → `docs/compatibilita.md`, senza telefono).
 - Generali, da `addyosmani/agent-skills` (versione fissata, fonte in `.claude/references/README.md`): pianificazione (`planning-and-task-breakdown`), piccoli passi (`incremental-implementation`), test prima del codice (`test-driven-development`), revisione (`code-review-and-quality`), debug (`debugging-and-error-recovery`).
 
 ### Subagenti

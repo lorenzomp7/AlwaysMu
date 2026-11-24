@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""Cosa offre ogni app musicale del catalogo: manifest e sessione multimediale.
+r"""Cosa offre ogni app musicale del catalogo: manifest e sessione multimediale.
 
-Si lancia sul PC con il telefono collegato via USB (debug USB attivo):
+Dagli APK (senza telefono): file .apk, .apks, .xapk o .apkm, o una cartella che li contiene:
+
+    python scripts/audit_app_musicali.py --apk C:\Users\lorenzo\Downloads\apk
+
+Con il telefono collegato via USB (debug USB attivo), facoltativo:
 
     python scripts/audit_app_musicali.py            # solo manifest
     python scripts/audit_app_musicali.py --sessioni # anche dumpsys durante la riproduzione
@@ -31,6 +35,8 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+import axml
 
 REPO = Path(__file__).resolve().parent.parent
 MUSIC_APP_KT = REPO / "app/src/main/java/com/alwaysmu/app/MusicApp.kt"
@@ -182,7 +188,7 @@ def markdown_rows(results: list[dict]) -> str:
     ]
     for r in results:
         if not r.get("installata"):
-            lines.append(f"| {r['app']} | {r['pacchetto']} | non installata | | | | |")
+            lines.append(f"| {r['app']} | {r['pacchetto']} | {r.get('assente', 'non installata')} | | | | |")
             continue
         m = r.get("manifest")
         if not m:
@@ -246,6 +252,81 @@ def audit_manifest(rea: str, serial: str, pkg: str, out: Path) -> dict:
     return {"manifest": summarize_components(evidence)}
 
 
+APK_SUFFIXES = (".apk", ".apks", ".xapk", ".apkm")
+
+
+def collect_apks(paths: list[str]) -> list[Path]:
+    found: list[Path] = []
+    for raw in paths:
+        p = Path(raw)
+        if p.is_dir():
+            found += sorted(f for f in p.rglob("*") if f.suffix.lower() in APK_SUFFIXES)
+        elif p.is_file():
+            found.append(p)
+        else:
+            print(f"Attenzione: {raw} non esiste")
+    return found
+
+
+def inspect_with_rea(rea: str, apk: Path) -> dict:
+    done = run([rea, "inspect-android-package", str(apk.resolve()), "--json"], timeout=900)
+    evidence = json.loads(done.stdout)
+    if done.returncode != 0 or "normalized_result" not in evidence:
+        raise RuntimeError(evidence.get("message", "inspect-android-package fallito"))
+    return evidence
+
+
+def rows_from_apks(catalog: list[tuple[str, list[str]]], evidences: dict[str, dict]) -> list[dict]:
+    """Una riga per app del catalogo; `evidences` è pacchetto → risultato del manifest."""
+    rows = []
+    for label, packages in catalog:
+        pkg = next((p for p in packages if p in evidences), packages[0])
+        if pkg in evidences:
+            rows.append({"app": label, "pacchetto": pkg, "installata": True,
+                         "manifest": summarize_components(evidences[pkg])})
+        else:
+            rows.append({"app": label, "pacchetto": pkg, "installata": False,
+                         "assente": "APK non fornito"})
+    return rows
+
+
+def audit_apks(paths: list[str], engine: str, base: Path) -> int:
+    rea = shutil.which("rea")
+    if engine == "auto":
+        engine = "rea" if rea and os.environ.get("REA_JADX_MCP_JAR") else "interno"
+    if engine == "rea" and not rea:
+        sys.exit("rea non trovato: npm install --global rea-agents@6.10.1")
+    apks = collect_apks(paths)
+    if not apks:
+        sys.exit("Nessun APK trovato (.apk, .apks, .xapk, .apkm).")
+    out = base / dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    (out / "rea").mkdir(parents=True)
+    evidences: dict[str, dict] = {}
+    for apk in apks:
+        try:
+            ev = inspect_with_rea(rea, apk) if engine == "rea" else axml.inspect_apk(apk)
+        except Exception as exc:  # un APK rotto non ferma gli altri
+            print(f"- {apk.name}: errore {exc}")
+            continue
+        n = ev.get("normalized_result", {})
+        pkg = n.get("package") or n.get("package_name") or apk.stem
+        (out / "rea" / f"{pkg}.manifest.json").write_text(json.dumps(ev, indent=2), encoding="utf-8")
+        evidences[pkg] = ev
+        print(f"- {apk.name}: {pkg}")
+    catalog = parse_catalog(MUSIC_APP_KT.read_text(encoding="utf-8"))
+    known = {p for _, ps in catalog for p in ps}
+    extra = sorted(p for p in evidences if p not in known)
+    rows = rows_from_apks(catalog, evidences)
+    summary = {"fonte": f"APK ({engine})", "data": dt.datetime.now().isoformat(timespec="seconds"),
+               "fuori_catalogo": extra, "app": rows}
+    (out / "riepilogo.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    (out / "riepilogo.md").write_text(markdown_rows(rows), encoding="utf-8")
+    if extra:
+        print(f"Fuori catalogo (ignorati): {', '.join(extra)}")
+    print(f"\nFatto ({engine}): {out / 'riepilogo.md'}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0], epilog=JADX_HELP)
     parser.add_argument("--serial", help="dispositivo come appare in `adb devices`")
@@ -254,8 +335,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--sessione", metavar="PACCHETTO",
                         help="senza domande: legge ora dumpsys media_session per un'app e lo aggiunge "
                              "all'ultimo riepilogo (la musica deve già suonare in quell'app)")
+    parser.add_argument("--apk", nargs="+", metavar="PERCORSO",
+                        help="analizza questi APK o cartelle di APK, senza telefono")
+    parser.add_argument("--motore", choices=("auto", "rea", "interno"), default="auto",
+                        help="con --apk: REA (serve JADX) o il lettore interno; auto = REA se pronto")
     parser.add_argument("--uscita", default=str(REPO / "audit-app-musicali"))
     args = parser.parse_args(argv)
+    if args.apk:
+        return audit_apks(args.apk, args.motore, Path(args.uscita))
 
     adb = os.environ.get("REA_ADB_PATH") or shutil.which("adb")
     rea = shutil.which("rea")
