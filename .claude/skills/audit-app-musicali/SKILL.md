@@ -22,9 +22,10 @@ e tu esegui ogni comando. Il telefono **non** serve: non chiederlo.
   (`python` su Windows). Scrive `audit-app-musicali/<data>/riepilogo.md` e `riepilogo.json`.
 - Motore: `--motore auto` usa REA (`rea inspect-android-package`) se `rea` è installato e
   `REA_JADX_MCP_JAR` è impostato, altrimenti il lettore interno `scripts/axml.py`, che legge
-  il manifest binario senza programmi esterni. Nel cloud usa il lettore interno.
+  il manifest binario senza programmi esterni. Nel cloud REA è pronto dopo
+  `bash .claude/rea/installa.sh --attendi` (lo avvia l'hook SessionStart; skill `rea`).
 - Sul PC Windows, se l'utente vuole REA e non c'è:
-  `powershell -ExecutionPolicy Bypass -File scripts\installa-rea.ps1 -SenzaDomande` (0 €).
+  `powershell -ExecutionPolicy Bypass -File .claude\rea\installa-windows.ps1 -SenzaDomande` (0 €).
 - APK che danno errore: dillo all'utente per nome (spesso un `.apkm` cifrato); gli altri
   vanno avanti. Pacchetti fuori catalogo sono elencati in `fuori_catalogo`: chiedi se vanno
   aggiunti a `MusicApp.KNOWN` (cambio di codice: skill `watchdog-change`).

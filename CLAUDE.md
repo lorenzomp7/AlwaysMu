@@ -36,11 +36,12 @@ AGENTS.md (importato sopra) vale per tutti gli agenti; qui solo ciò che riguard
 
 ### Server MCP
 
-- `rea` (REA di morluto, MIT) è dichiarato in `.mcp.json` e attivato in `.claude/settings.json`:
-  in ogni sessione Claude Code su questa repo ci sono i suoi strumenti per APK
-  (famiglie `android,apktool,artifact`: `inspect_apk_signature`, `inspect_android_package`, …).
-  Parte con `npx -y rea-agents@6.10.1 mcp`. Gli strumenti che decompilano o leggono il manifest
-  vogliono JADX (`REA_JADX_MCP_JAR`); se non c'è, per il manifest usa `scripts/axml.py`.
-- Sul PC Windows di Lorenzo `scripts\installa-rea.ps1` installa JADX e aggiunge una
-  registrazione locale (`cmd /c rea mcp`) che ha la precedenza su `.mcp.json`.
+- `rea` ([REA](https://github.com/morluto/rea) di morluto, MIT, 6.10.1) è dichiarato in `.mcp.json`
+  (`node .claude/rea/rea.mjs`, uguale su Linux, macOS e Windows) e attivo in `.claude/settings.json`:
+  in ogni sessione Claude Code su questa repo, nel cloud e sul PC, ci sono i suoi 61 strumenti per gli
+  APK (famiglie `android,apktool,artifact,adb,flutter`: manifest, firma, risorse, classi, Flutter, adb).
+  JADX e Apktool li installa `.claude/rea/installa.sh` (nel cloud parte da solo all'avvio della
+  sessione; prima della prima analisi `bash .claude/rea/installa.sh --attendi`) o, sul PC Windows,
+  `.claude\rea\installa-windows.ps1`, che registra REA anche in Claude Desktop. Come usarlo: skill
+  `rea`. Controllo: `node .claude/rea/check.mjs [file.apk]`.
 - Per l'audit delle app musicali usa la skill `audit-app-musicali`. GitHub è già disponibile tramite `gh`.

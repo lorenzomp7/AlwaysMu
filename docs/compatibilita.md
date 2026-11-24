@@ -18,7 +18,7 @@ Claude segue la skill `audit-app-musicali`: analizza i manifest
 (`scripts/audit_app_musicali.py --apk`), riempie la tabella qui sotto e fa il commit.
 Il telefono non serve. REA è già collegato come strumento in ogni sessione Claude Code su
 questa repo (`.mcp.json`); per leggere i manifest con REA serve JADX, che sul PC installa
-`scripts\installa-rea.ps1` (0 €). Senza JADX si usa il lettore interno `scripts/axml.py`,
+`.claude\rea\installa-windows.ps1` (0 €); nel cloud e su Linux lo installa `.claude/rea/installa.sh`. Senza JADX si usa il lettore interno `scripts/axml.py`,
 che legge il manifest binario senza programmi esterni.
 
 Si leggono solo le dichiarazioni dei manifest e lo stato delle sessioni, per
