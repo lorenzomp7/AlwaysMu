@@ -1,6 +1,6 @@
 ﻿# Installa REA (morluto/rea, licenza MIT) su Windows e la registra come server MCP in
 # Claude Code e Claude Desktop, con quello che serve per analizzare le app Android:
-# Node.js, adb, JDK e JADX. Tutto gratuito, non serve amministratore.
+# Node.js, JDK e JADX (il telefono non serve: si lavora sui file APK). Tutto gratuito, non serve amministratore.
 #
 # Da PowerShell:
 #   powershell -ExecutionPolicy Bypass -File scripts\installa-rea.ps1
@@ -8,7 +8,7 @@
 #   powershell -ExecutionPolicy Bypass -File scripts\installa-rea.ps1 -SenzaDomande
 #
 # Poi riavvia Claude Code / Claude Desktop: trovi gli strumenti di REA
-# (pull_adb_package, inspect_android_package, inspect_apk_signature, ...).
+# (inspect_android_package, inspect_apk_signature, decode_android_resources, ...).
 
 param([switch]$SenzaDomande)
 
@@ -60,11 +60,6 @@ if (-not (Node-Ok)) {
 }
 Write-Host "  node $(& node -v)"
 
-Step 'adb (Android platform-tools)'
-if (-not (Get-Command adb -ErrorAction SilentlyContinue)) { Winget-Install 'Google.PlatformTools' }
-$adb = (Get-Command adb -ErrorAction Stop).Source
-Set-UserEnv 'REA_ADB_PATH' $adb
-
 Step 'JDK (serve a JADX)'
 if (-not (Get-Command java -ErrorAction SilentlyContinue)) { Winget-Install 'EclipseAdoptium.Temurin.21.JDK' }
 $java = (Get-Command java -ErrorAction Stop).Source
@@ -90,13 +85,30 @@ Step "REA $ReaVersion"
 npm install --global "rea-agents@$ReaVersion"
 Refresh-Path
 
-Step 'Registrazione in Claude Code e Claude Desktop'
-$clients = @('claude_code', 'claude_desktop')
+Step 'Registrazione in Claude Code'
+# La repo dichiara REA in .mcp.json con `npx`, che su Windows va lanciato tramite cmd:
+# una registrazione locale (vale solo su questo PC, per questa cartella) ha la precedenza.
+$repo = Split-Path $PSScriptRoot -Parent
+if (Get-Command claude -ErrorAction SilentlyContinue) {
+    Push-Location $repo
+    try {
+        claude mcp remove rea --scope local 2>$null | Out-Null
+        claude mcp add --scope local `
+            --env "REA_MCP_TOOL_FAMILIES=android,apktool,artifact" `
+            --env "REA_JADX_MCP_JAR=$jar" `
+            rea -- cmd /c rea mcp
+    } finally { Pop-Location }
+} else {
+    Write-Host '  Claude Code non trovato: salto (si può rilanciare lo script dopo averlo installato).' -ForegroundColor Yellow
+}
+
+Step 'Registrazione in Claude Desktop'
+$desktop = $true
 # Claude Desktop aperto può riscrivere il suo file e perdere la registrazione.
 if (Get-Process -Name 'Claude' -ErrorAction SilentlyContinue) {
     if ($SenzaDomande) {
-        Write-Host '  Claude Desktop è aperto: registro solo Claude Code. Per Claude Desktop chiudilo e rilancia lo script.' -ForegroundColor Yellow
-        $clients = @('claude_code')
+        Write-Host '  Claude Desktop è aperto: lo salto. Per registrarlo chiudilo e rilancia lo script.' -ForegroundColor Yellow
+        $desktop = $false
     } else {
         Write-Host '  Claude Desktop è aperto: chiudilo del tutto (anche dall''icona vicino all''orologio).' -ForegroundColor Yellow
         while (Get-Process -Name 'Claude' -ErrorAction SilentlyContinue) {
@@ -104,14 +116,15 @@ if (Get-Process -Name 'Claude' -ErrorAction SilentlyContinue) {
         }
     }
 }
-$setupArgs = @('setup', '--tool-families', 'android') + ($clients | ForEach-Object { '--client', $_ })
-# Senza -SenzaDomande, setup mostra le modifiche ai file di configurazione e chiede conferma.
-if ($SenzaDomande) { $setupArgs += '--yes' }
-& rea @setupArgs
+if ($desktop) {
+    $setupArgs = @('setup', '--client', 'claude_desktop', '--tool-families', 'android,apktool,artifact')
+    # Senza -SenzaDomande, setup mostra le modifiche al file di configurazione e chiede conferma.
+    if ($SenzaDomande) { $setupArgs += '--yes' }
+    & rea @setupArgs
+}
 
 Step 'Controllo'
-$doctorArgs = @('doctor', '--provider', 'jadx') + ($clients | ForEach-Object { '--client', $_ })
-& rea @doctorArgs
+rea doctor --provider jadx
 
 Write-Host "`nFatto. Riavvia Claude Code / Claude Desktop, collega il telefono con il debug USB attivo" -ForegroundColor Green
 Write-Host "e accetta la richiesta di autorizzazione sul telefono." -ForegroundColor Green

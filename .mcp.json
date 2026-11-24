@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "rea": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "rea-agents@6.10.1", "mcp"],
+      "env": {
+        "REA_MCP_TOOL_FAMILIES": "android,apktool,artifact",
+        "REA_JADX_MCP_JAR": "${REA_JADX_MCP_JAR:-}"
+      }
+    }
+  }
+}

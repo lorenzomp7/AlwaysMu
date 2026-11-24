@@ -15,6 +15,9 @@ e tu esegui ogni comando. Il telefono **non** serve: non chiederlo.
 - Copia gli APK fuori dalla repo; non vanno mai committati (sono di terzi).
 
 ## 2. Analizza
+- Gli strumenti MCP di REA (server `rea`, da `.mcp.json`) sono disponibili in chat: per un
+  singolo APK puoi chiamare direttamente `inspect_apk_signature` o `inspect_android_package`.
+  Per la tabella completa usa lo script, che dà lo stesso riepilogo per tutte le app:
 - `python3 scripts/audit_app_musicali.py --apk <file o cartelle>`
   (`python` su Windows). Scrive `audit-app-musicali/<data>/riepilogo.md` e `riepilogo.json`.
 - Motore: `--motore auto` usa REA (`rea inspect-android-package`) se `rea` è installato e

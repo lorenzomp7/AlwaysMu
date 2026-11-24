@@ -36,7 +36,11 @@ AGENTS.md (importato sopra) vale per tutti gli agenti; qui solo ciò che riguard
 
 ### Server MCP
 
-- Nessun server MCP di progetto: per questa repo non ne serve nessuno nel cloud (GitHub è già disponibile tramite `gh`).
-- Sul PC Windows di Lorenzo, REA (morluto/rea) è registrato a livello utente in Claude Code
-  e Claude Desktop da `scripts\installa-rea.ps1`. Per l'audit delle app musicali usa la
-  skill `audit-app-musicali`.
+- `rea` (REA di morluto, MIT) è dichiarato in `.mcp.json` e attivato in `.claude/settings.json`:
+  in ogni sessione Claude Code su questa repo ci sono i suoi strumenti per APK
+  (famiglie `android,apktool,artifact`: `inspect_apk_signature`, `inspect_android_package`, …).
+  Parte con `npx -y rea-agents@6.10.1 mcp`. Gli strumenti che decompilano o leggono il manifest
+  vogliono JADX (`REA_JADX_MCP_JAR`); se non c'è, per il manifest usa `scripts/axml.py`.
+- Sul PC Windows di Lorenzo `scripts\installa-rea.ps1` installa JADX e aggiunge una
+  registrazione locale (`cmd /c rea mcp`) che ha la precedenza su `.mcp.json`.
+- Per l'audit delle app musicali usa la skill `audit-app-musicali`. GitHub è già disponibile tramite `gh`.
