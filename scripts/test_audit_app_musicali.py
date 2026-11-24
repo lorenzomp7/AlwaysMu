@@ -90,6 +90,17 @@ class SessioniTest(unittest.TestCase):
         self.assertEqual(a.decode_actions(4 | 512), ["PLAY", "PLAY_PAUSE"])
 
 
+class MergeTest(unittest.TestCase):
+    def test_aggiunge_le_sessioni_all_app_giusta(self):
+        summary = {"app": [{"app": "Spotify", "pacchetto": "com.spotify.music", "installata": True},
+                           {"app": "Tidal", "pacchetto": "com.aspiro.tidal", "installata": False}]}
+        sessions = a.parse_media_sessions(DUMPSYS, "com.spotify.music")
+        self.assertTrue(a.merge_sessions(summary, "com.spotify.music", sessions))
+        self.assertEqual(summary["app"][0]["sessioni"][0]["stato"], "PLAYING")
+        self.assertNotIn("sessioni", summary["app"][1])
+        self.assertFalse(a.merge_sessions(summary, "com.example", []))
+
+
 class MarkdownTest(unittest.TestCase):
     def test_righe(self):
         rows = a.markdown_rows([

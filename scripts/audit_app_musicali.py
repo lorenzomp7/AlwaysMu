@@ -5,6 +5,7 @@ Si lancia sul PC con il telefono collegato via USB (debug USB attivo):
 
     python scripts/audit_app_musicali.py            # solo manifest
     python scripts/audit_app_musicali.py --sessioni # anche dumpsys durante la riproduzione
+    python scripts/audit_app_musicali.py --sessione com.spotify.music  # una sessione, senza domande
 
 Per ogni app di MusicApp.KNOWN installata sul telefono:
   1. `rea pull-adb-package` scarica il suo APK (REA di morluto, licenza MIT);
@@ -152,6 +153,20 @@ def parse_media_sessions(dumpsys: str, package: str) -> list[dict]:
     return [s for s in sessions if s.get("pacchetto") == package]
 
 
+def merge_sessions(summary: dict, package: str, sessions: list[dict]) -> bool:
+    """Mette in `summary` le sessioni lette per `package`; False se l'app non c'è."""
+    for row in summary.get("app", []):
+        if row.get("pacchetto") == package:
+            row["sessioni"] = sessions
+            return True
+    return False
+
+
+def latest_run(base: Path) -> Path | None:
+    runs = sorted(p for p in base.glob("*/riepilogo.json") if p.is_file())
+    return runs[-1] if runs else None
+
+
 def markdown_rows(results: list[dict]) -> str:
     """Righe per la parte «dichiarato nel manifest» di docs/compatibilita.md."""
 
@@ -236,6 +251,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--serial", help="dispositivo come appare in `adb devices`")
     parser.add_argument("--sessioni", action="store_true",
                         help="per ogni app chiede di far partire la musica e legge dumpsys media_session")
+    parser.add_argument("--sessione", metavar="PACCHETTO",
+                        help="senza domande: legge ora dumpsys media_session per un'app e lo aggiunge "
+                             "all'ultimo riepilogo (la musica deve già suonare in quell'app)")
     parser.add_argument("--uscita", default=str(REPO / "audit-app-musicali"))
     args = parser.parse_args(argv)
 
@@ -243,6 +261,8 @@ def main(argv: list[str] | None = None) -> int:
     rea = shutil.which("rea")
     if not adb:
         sys.exit("adb non trovato: installa le Android platform-tools o imposta REA_ADB_PATH.")
+    if args.sessione:
+        return capture_one_session(adb, pick_serial(adb, args.serial), args.sessione, Path(args.uscita))
     if not rea:
         sys.exit("rea non trovato: npm install --global rea-agents@6.10.1")
     if not os.environ.get("REA_JADX_MCP_JAR"):
@@ -276,7 +296,24 @@ def main(argv: list[str] | None = None) -> int:
                "app": results}
     (out / "riepilogo.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     (out / "riepilogo.md").write_text(markdown_rows(results), encoding="utf-8")
-    print(f"\nFatto. Manda {out / 'riepilogo.json'} per completare docs/compatibilita.md.")
+    print(f"\nFatto: {out / 'riepilogo.md'}")
+    return 0
+
+
+def capture_one_session(adb: str, serial: str, pkg: str, base: Path) -> int:
+    summary_path = latest_run(base)
+    if summary_path is None:
+        sys.exit("Nessun riepilogo: lancia prima lo script senza --sessione.")
+    dump = run([adb, "-s", serial, "shell", "dumpsys", "media_session"]).stdout
+    (summary_path.parent / "rea").mkdir(exist_ok=True)
+    (summary_path.parent / "rea" / f"{pkg}.media_session.txt").write_text(dump, encoding="utf-8")
+    sessions = parse_media_sessions(dump, pkg)
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    if not merge_sessions(summary, pkg, sessions):
+        sys.exit(f"{pkg} non è nel riepilogo {summary_path}.")
+    summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    (summary_path.parent / "riepilogo.md").write_text(markdown_rows(summary["app"]), encoding="utf-8")
+    print(json.dumps({"pacchetto": pkg, "sessioni": sessions}, ensure_ascii=False, indent=2))
     return 0
 
 

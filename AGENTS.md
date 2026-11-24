@@ -23,7 +23,7 @@ Lavora su `main_claude` salvo indicazione diversa: ogni push su `main_claude` o
 | Test di entrambi i flavor | `./gradlew testStandardDebugUnitTest testCompletaDebugUnitTest` |
 | APK | `./gradlew assembleStandardDebug assembleCompletaDebug` |
 | Test degli script (`scripts/`) | `python3 -m unittest discover -s scripts` |
-| REA in Claude Desktop (Windows, una volta) | `powershell -ExecutionPolicy Bypass -File scripts\installa-rea-claude-desktop.ps1` |
+| REA in Claude Code e Claude Desktop (Windows, una volta) | `powershell -ExecutionPolicy Bypass -File scripts\installa-rea.ps1` |
 | Audit delle app musicali (sul PC, telefono collegato) | `python scripts/audit_app_musicali.py --sessioni` → `docs/compatibilita.md` |
 
 I test JVM stanno in `app/src/test/`. Esegui la verifica standard prima di

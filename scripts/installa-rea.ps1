@@ -1,12 +1,16 @@
-﻿# Installa REA (morluto/rea, licenza MIT) come server MCP in Claude Desktop su Windows,
-# con quello che serve per analizzare le app Android: Node.js, adb, JDK e JADX.
-# Tutto gratuito.
+﻿# Installa REA (morluto/rea, licenza MIT) su Windows e la registra come server MCP in
+# Claude Code e Claude Desktop, con quello che serve per analizzare le app Android:
+# Node.js, adb, JDK e JADX. Tutto gratuito, non serve amministratore.
 #
-# Uso, da PowerShell (non serve amministratore):
-#   powershell -ExecutionPolicy Bypass -File scripts\installa-rea-claude-desktop.ps1
+# Da PowerShell:
+#   powershell -ExecutionPolicy Bypass -File scripts\installa-rea.ps1
+# Da Claude Code (senza domande; Claude Desktop viene registrato solo se è chiuso):
+#   powershell -ExecutionPolicy Bypass -File scripts\installa-rea.ps1 -SenzaDomande
 #
-# Alla fine riapri Claude Desktop: in una chat nuova trovi gli strumenti di REA
+# Poi riavvia Claude Code / Claude Desktop: trovi gli strumenti di REA
 # (pull_adb_package, inspect_android_package, inspect_apk_signature, ...).
+
+param([switch]$SenzaDomande)
 
 $ErrorActionPreference = 'Stop'
 
@@ -86,18 +90,28 @@ Step "REA $ReaVersion"
 npm install --global "rea-agents@$ReaVersion"
 Refresh-Path
 
-Step 'Registrazione in Claude Desktop'
+Step 'Registrazione in Claude Code e Claude Desktop'
+$clients = @('claude_code', 'claude_desktop')
+# Claude Desktop aperto può riscrivere il suo file e perdere la registrazione.
 if (Get-Process -Name 'Claude' -ErrorAction SilentlyContinue) {
-    Write-Host '  Claude Desktop è aperto: chiudilo del tutto (anche dall''icona vicino all''orologio).' -ForegroundColor Yellow
-    while (Get-Process -Name 'Claude' -ErrorAction SilentlyContinue) {
-        Read-Host '  Premi Invio quando è chiuso'
+    if ($SenzaDomande) {
+        Write-Host '  Claude Desktop è aperto: registro solo Claude Code. Per Claude Desktop chiudilo e rilancia lo script.' -ForegroundColor Yellow
+        $clients = @('claude_code')
+    } else {
+        Write-Host '  Claude Desktop è aperto: chiudilo del tutto (anche dall''icona vicino all''orologio).' -ForegroundColor Yellow
+        while (Get-Process -Name 'Claude' -ErrorAction SilentlyContinue) {
+            Read-Host '  Premi Invio quando è chiuso'
+        }
     }
 }
-# Setup mostra le modifiche al file di configurazione e chiede conferma.
-rea setup --client claude_desktop --tool-families android
+$setupArgs = @('setup', '--tool-families', 'android') + ($clients | ForEach-Object { '--client', $_ })
+# Senza -SenzaDomande, setup mostra le modifiche ai file di configurazione e chiede conferma.
+if ($SenzaDomande) { $setupArgs += '--yes' }
+& rea @setupArgs
 
 Step 'Controllo'
-rea doctor --client claude_desktop --provider jadx
+$doctorArgs = @('doctor', '--provider', 'jadx') + ($clients | ForEach-Object { '--client', $_ })
+& rea @doctorArgs
 
-Write-Host "`nFatto. Riapri Claude Desktop, collega il telefono con il debug USB attivo e accetta" -ForegroundColor Green
-Write-Host "la richiesta di autorizzazione sul telefono. Cosa chiedere a Claude è in docs\compatibilita.md." -ForegroundColor Green
+Write-Host "`nFatto. Riavvia Claude Code / Claude Desktop, collega il telefono con il debug USB attivo" -ForegroundColor Green
+Write-Host "e accetta la richiesta di autorizzazione sul telefono." -ForegroundColor Green

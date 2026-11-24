@@ -4,35 +4,24 @@ Che cosa offre ognuna delle 13 app di `MusicApp.KNOWN` e quale metodo di avvio
 funziona davvero. Serve ai punti 8 (ripresa con `EXTRA_RECENT`), 9 (`MethodRanker`),
 13 (riproduci qualcosa con ricerca vuota) e 21 (pulsante «Prova questa app») del Piano.
 
-Stato: **da compilare**. La parte «dichiarato» si riempie con REA in Claude Desktop;
+Stato: **da compilare**. La parte «dichiarato» si riempie con REA (morluto/rea);
 la parte «provato» va fatta sul telefono, app per app.
 
-## REA in Claude Desktop (Windows)
+## Come si aggiorna, tutto dalla chat
 
-Una volta sola, da PowerShell nella cartella della repo (gratis, niente amministratore):
+Apri **Claude Code sul PC Windows** nella cartella della repo (branch `main_claude`),
+collega il telefono con il debug USB attivo e scrivi:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\installa-rea-claude-desktop.ps1
-```
+> Fai l'audit delle app musicali.
 
-Lo script installa ciò che manca (Node.js, adb, JDK, il JAR di JADX con controllo SHA-256,
-`rea-agents@6.10.1`) e registra REA in Claude Desktop con gli strumenti Android; prima di
-toccare la configurazione di Claude Desktop chiede conferma. Poi riapri Claude Desktop,
-collega il telefono con il debug USB attivo e accetta l'autorizzazione sul telefono.
+Claude Code segue la skill `audit-app-musicali`: se serve installa da solo REA e i
+prerequisiti (`scripts\installa-rea.ps1 -SenzaDomande`, costo 0 €), legge i manifest,
+ti chiede di far partire la musica app per app, riempie la tabella qui sotto e fa il
+commit. A te restano solo le azioni sul telefono.
 
-In una chat nuova di Claude Desktop chiedi, per esempio:
-
-> Con REA: elenca i dispositivi adb, scarica con pull_adb_package gli APK di queste app
-> (pacchetti in MusicApp.kt di AlwaysMu: com.spotify.music, com.amazon.mp3,
-> deezer.android.app, com.aspiro.tidal, com.apple.android.music,
-> com.google.android.apps.youtube.music, com.soundcloud.android, com.qobuz.music,
-> com.idagio.app, com.mixcloud.player, com.audiomack, com.bandcamp.android,
-> com.brave.browser), analizzale con inspect_android_package e riempi la tabella
-> «Dichiarato nel manifest» qui sotto. Poi, mentre faccio partire la musica in ogni app,
-> leggi `dumpsys media_session` e aggiungi stato e azioni della sessione.
-
-In alternativa, senza Claude: `python scripts/audit_app_musicali.py --sessioni` fa le
-stesse cose dal terminale e scrive `audit-app-musicali/<data>/riepilogo.md`.
+Lo stesso funziona da una chat dell'app Claude Desktop collegata al PC (cartella della
+repo aggiunta), e REA è disponibile anche come strumento nelle chat di Claude Desktop
+dopo l'installazione. Dal cloud o dal telefono no: il telefono deve essere collegato al PC.
 
 Si leggono solo le dichiarazioni dei manifest e lo stato delle sessioni, per
 interoperabilità: nessun codice delle app viene copiato.
